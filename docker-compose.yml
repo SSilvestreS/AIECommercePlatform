@@ -193,6 +193,46 @@ services:
       timeout: 20s
       retries: 3
 
+  # API Gateway - Ponto de entrada principal da aplicação
+  gateway:
+    build:
+      context: ./src/Gateway/AIECommerce.Gateway
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000;https://+:5001
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - aiecommerce-network
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+
+  # Serviço de Recomendações ML
+  ml-recommendation:
+    build:
+      context: ./src/ML.Services/AIECommerce.ML.RecommendationService
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - aiecommerce-network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   redis_data:

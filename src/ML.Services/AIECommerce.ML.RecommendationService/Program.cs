@@ -1,5 +1,6 @@
 using Serilog;
 using Serilog.Events;
+using AIECommerce.ML.RecommendationService.Services;
 
 // Configuração do logger Serilog para o serviço de recomendações
 Log.Logger = new LoggerConfiguration()
@@ -59,6 +60,10 @@ try
             c.RoutePrefix = string.Empty; // Swagger na raiz
         });
     }
+
+    // Configuração de URLs para usar apenas HTTP em desenvolvimento
+    app.Urls.Clear();
+    app.Urls.Add("http://0.0.0.0:5001");
 
     // Configuração do CORS
     app.UseCors("AllowAll");

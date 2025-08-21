@@ -49,7 +49,7 @@ try
     builder.Services.AddHttpClient();
 
     // Configuração de serviços customizados
-    builder.Services.AddScoped<RequestLoggingMiddleware>();
+    // RequestLoggingMiddleware é usado como middleware, não como serviço
 
     var app = builder.Build();
 
@@ -63,6 +63,10 @@ try
             c.RoutePrefix = string.Empty; // Swagger na raiz
         });
     }
+
+    // Configuração de URLs para usar apenas HTTP em desenvolvimento
+    app.Urls.Clear();
+    app.Urls.Add("http://0.0.0.0:5000");
 
     // Middleware de logging de requisições
     app.UseMiddleware<RequestLoggingMiddleware>();

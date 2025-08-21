@@ -1,0 +1,376 @@
+{
+	"info": {
+		"_postman_id": "aiecommerce-platform-collection",
+		"name": "AIECommerce Platform APIs",
+		"description": "Coleção completa para testar todas as APIs da plataforma AIECommerce com serviços de Machine Learning",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "aiecommerce-platform"
+	},
+	"item": [
+		{
+			"name": "Gateway API",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/health",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["health"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Swagger UI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": [""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Recomendações - Gateway",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/api/gateway/recommendations?userId=1&limit=5",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "gateway", "recommendations"],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "5"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Análise de Sentimento - Gateway",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"text\": \"Este produto é incrível! Recomendo muito.\",\n  \"language\": \"pt-BR\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/gateway/sentiment",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "gateway", "sentiment"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Detecção de Fraude - Gateway",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"orderId\": \"ORD-12345\",\n  \"userId\": 1,\n  \"amount\": 150.50,\n  \"paymentMethod\": \"credit_card\",\n  \"ipAddress\": \"192.168.1.100\"\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/gateway/fraud-detection",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "gateway", "fraud-detection"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Previsão de Demanda - Gateway",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"productId\": 123,\n  \"daysAhead\": 30,\n  \"historicalData\": [100, 120, 90, 150, 130]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:5000/api/gateway/demand-forecast",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "gateway", "demand-forecast"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dashboard Summary - Gateway",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5000/api/gateway/dashboard",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5000",
+							"path": ["api", "gateway", "dashboard"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ML Recommendation Service",
+			"item": [
+				{
+					"name": "Health Check - ML",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5002/health",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5002",
+							"path": ["health"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Swagger UI - ML",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5002/",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5002",
+							"path": [""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Recomendações por Usuário",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5002/api/recommendations/user/1?limit=5&algorithm=hybrid",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5002",
+							"path": ["api", "recommendations", "user", "1"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "5"
+								},
+								{
+									"key": "algorithm",
+									"value": "hybrid"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Produtos Similares",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5002/api/recommendations/product/123/similar?limit=3",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5002",
+							"path": ["api", "recommendations", "product", "123", "similar"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Recomendações Anônimas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5002/api/recommendations/anonymous?limit=5&category=Eletrônicos",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5002",
+							"path": ["api", "recommendations", "anonymous"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "5"
+								},
+								{
+									"key": "category",
+									"value": "Eletrônicos"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Retreinar Modelo",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5002/api/recommendations/model/retrain",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5002",
+							"path": ["api", "recommendations", "model", "retrain"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Estatísticas do Modelo",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:5002/api/recommendations/stats",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "5002",
+							"path": ["api", "recommendations", "stats"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Infraestrutura",
+			"item": [
+				{
+					"name": "RabbitMQ Management",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:15672",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "15672",
+							"path": [""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Prometheus",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:9090",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "9090",
+							"path": [""]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Grafana",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3000",
+							"protocol": "http",
+							"host": ["localhost"],
+							"port": "3000",
+							"path": [""]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "string"
+		},
+		{
+			"key": "ml_base_url",
+			"value": "http://localhost:5002",
+			"type": "string"
+		}
+	]
+}
