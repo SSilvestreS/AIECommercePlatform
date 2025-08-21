@@ -1,0 +1,219 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aiecommerce-ingress
+  namespace: aiecommerce
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - api.aiecommerce.com
+    - ml.aiecommerce.com
+    - dashboard.aiecommerce.com
+    secretName: aiecommerce-tls
+  rules:
+  - host: api.aiecommerce.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 5000
+      - path: /catalog
+        pathType: Prefix
+        backend:
+          service:
+            name: catalog-service
+            port:
+              number: 5000
+      - path: /orders
+        pathType: Prefix
+        backend:
+          service:
+            name: order-service
+            port:
+              number: 5000
+      - path: /identity
+        pathType: Prefix
+        backend:
+          service:
+            name: identity-service
+            port:
+              number: 5000
+  - host: ml.aiecommerce.com
+    http:
+      paths:
+      - path: /recommendations
+        pathType: Prefix
+        backend:
+          service:
+            name: ml-recommendation-service
+            port:
+              number: 5000
+      - path: /sentiment
+        pathType: Prefix
+        backend:
+          service:
+            name: ml-sentiment-service
+            port:
+              number: 5000
+      - path: /fraud
+        pathType: Prefix
+        backend:
+          service:
+            name: ml-fraud-service
+            port:
+              number: 5000
+      - path: /demand
+        pathType: Prefix
+        backend:
+          service:
+            name: ml-demand-service
+            port:
+              number: 5000
+  - host: dashboard.aiecommerce.com
+    http:
+      paths:
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 9090
+      - path: /jaeger
+        pathType: Prefix
+        backend:
+          service:
+            name: jaeger
+            port:
+              number: 16686
+      - path: /kibana
+        pathType: Prefix
+        backend:
+          service:
+            name: kibana
+            port:
+              number: 5601
+      - path: /mlflow
+        pathType: Prefix
+        backend:
+          service:
+            name: mlflow
+            port:
+              number: 5000
+      - path: /minio
+        pathType: Prefix
+        backend:
+          service:
+            name: minio
+            port:
+              number: 9001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: aiecommerce
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: api-gateway
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+  namespace: aiecommerce
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: catalog-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service
+  namespace: aiecommerce
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: order-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity-service
+  namespace: aiecommerce
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: identity-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-sentiment-service
+  namespace: aiecommerce
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: ml-sentiment-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-fraud-service
+  namespace: aiecommerce
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: ml-fraud-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-demand-service
+  namespace: aiecommerce
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    app: ml-demand-service

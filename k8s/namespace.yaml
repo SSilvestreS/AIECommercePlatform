@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aiecommerce
+  labels:
+    name: aiecommerce
+    purpose: ai-ecommerce-platform
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: aiecommerce-quota
+  namespace: aiecommerce
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    persistentvolumeclaims: "20"
+    services: "50"
+    secrets: "20"
+    configmaps: "20"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: aiecommerce-limits
+  namespace: aiecommerce
+spec:
+  limits:
+  - default:
+      cpu: 500m
+      memory: 1Gi
+    defaultRequest:
+      cpu: 100m
+      memory: 128Mi
+    type: Container
+  - default:
+      cpu: 2
+      memory: 4Gi
+    defaultRequest:
+      cpu: 500m
+      memory: 1Gi
+    type: Pod

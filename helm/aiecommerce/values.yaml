@@ -1,0 +1,388 @@
+# Default values for AIECommerce Platform
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  environment: production
+  domain: aiecommerce.com
+  imageRegistry: ""
+  imagePullSecrets: []
+  storageClass: "fast-ssd"
+
+# PostgreSQL configuration
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "password123"
+    database: "aiecommerce"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "fast-ssd"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Redis configuration
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "fast-ssd"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# RabbitMQ configuration
+rabbitmq:
+  enabled: true
+  auth:
+    username: "guest"
+    password: "guest"
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "fast-ssd"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+
+# Prometheus configuration
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 15d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: "fast-ssd"
+          resources:
+            requests:
+              storage: 50Gi
+
+# Grafana configuration
+grafana:
+  enabled: true
+  adminPassword: "admin123"
+  persistence:
+    enabled: true
+    size: 10Gi
+    storageClass: "fast-ssd"
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: ''
+          type: file
+          disableDeletion: false
+          updateIntervalSeconds: 10
+          allowUiUpdates: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+# Elasticsearch configuration
+elasticsearch:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+    limits:
+      cpu: "2000m"
+      memory: "4Gi"
+  volumeClaimTemplate:
+    resources:
+      requests:
+        storage: 30Gi
+        storageClassName: "fast-ssd"
+
+# Kibana configuration
+kibana:
+  enabled: true
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+# Logstash configuration
+logstash:
+  enabled: true
+  replicas: 1
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+# Jaeger configuration
+jaeger:
+  enabled: true
+  storage:
+    type: memory
+  ingress:
+    enabled: true
+    hosts:
+      - host: jaeger.aiecommerce.com
+        paths:
+          - path: /
+            pathType: Prefix
+
+# MLflow configuration
+mlflow:
+  enabled: true
+  image:
+    repository: python
+    tag: "3.9-slim"
+  service:
+    type: ClusterIP
+    port: 5000
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: "fast-ssd"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+# MinIO configuration
+minio:
+  enabled: true
+  auth:
+    rootUser: "minioadmin"
+    rootPassword: "minioadmin123"
+  persistence:
+    enabled: true
+    size: 50Gi
+    storageClass: "fast-ssd"
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+# API Gateway configuration
+apiGateway:
+  enabled: true
+  replicas: 2
+  image:
+    repository: aiecommerce/api-gateway
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+
+# ML Services configuration
+mlServices:
+  enabled: true
+  recommendation:
+    enabled: true
+    replicas: 3
+    image:
+      repository: aiecommerce/ml-recommendation-service
+      tag: "latest"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+  
+  sentiment:
+    enabled: true
+    replicas: 2
+    image:
+      repository: aiecommerce/ml-sentiment-service
+      tag: "latest"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  
+  fraud:
+    enabled: true
+    replicas: 2
+    image:
+      repository: aiecommerce/ml-fraud-service
+      tag: "latest"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  
+  demand:
+    enabled: true
+    replicas: 2
+    image:
+      repository: aiecommerce/ml-demand-service
+      tag: "latest"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+
+# Business Services configuration
+businessServices:
+  enabled: true
+  catalog:
+    enabled: true
+    replicas: 2
+    image:
+      repository: aiecommerce/catalog-service
+      tag: "latest"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  
+  order:
+    enabled: true
+    replicas: 2
+    image:
+      repository: aiecommerce/order-service
+      tag: "latest"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+  
+  identity:
+    enabled: true
+    replicas: 2
+    image:
+      repository: aiecommerce/identity-service
+      tag: "latest"
+    resources:
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: api.aiecommerce.com
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: ml.aiecommerce.com
+      paths:
+        - path: /
+          pathType: Prefix
+    - host: dashboard.aiecommerce.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: aiecommerce-tls
+      hosts:
+        - api.aiecommerce.com
+        - ml.aiecommerce.com
+        - dashboard.aiecommerce.com
+
+# Monitoring configuration
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+  grafanaDashboards:
+    enabled: true
+  alerting:
+    enabled: true
+    alertmanager:
+      enabled: true
+      config:
+        global:
+          smtp_smarthost: 'localhost:587'
+          smtp_from: 'alertmanager@aiecommerce.com'
+
+# Security configuration
+security:
+  enabled: true
+  networkPolicy:
+    enabled: true
+  podSecurityPolicy:
+    enabled: true
+  rbac:
+    enabled: true
+  secrets:
+    enabled: true
+    postgres:
+      enabled: true
+    redis:
+      enabled: true
+    rabbitmq:
+      enabled: true
+    minio:
+      enabled: true
+
+# Backup configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: 30
+  storage:
+    type: s3
+    bucket: "aiecommerce-backups"
+    region: "us-east-1"

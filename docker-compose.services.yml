@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  # API Gateway - Ponto de entrada principal da aplicação
+  gateway:
+    build:
+      context: ./src/Gateway/AIECommerce.Gateway
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000;https://+:5001
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - aiecommerce-network
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    restart: unless-stopped
+
+  # Serviço de Recomendações ML
+  ml-recommendation:
+    build:
+      context: ./src/ML.Services/AIECommerce.ML.RecommendationService
+      dockerfile: Dockerfile
+    ports:
+      - "5002:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - aiecommerce-network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Serviço de Análise de Sentimento ML (placeholder)
+  ml-sentiment:
+    image: busybox:latest
+    command: ["echo", "Serviço de Análise de Sentimento - Em desenvolvimento"]
+    networks:
+      - aiecommerce-network
+    restart: "no"
+
+  # Serviço de Detecção de Fraude ML (placeholder)
+  ml-fraud:
+    image: busybox:latest
+    command: ["echo", "Serviço de Detecção de Fraude - Em desenvolvimento"]
+    networks:
+      - aiecommerce-network
+    restart: "no"
+
+  # Serviço de Previsão de Demanda ML (placeholder)
+  ml-demand:
+    image: busybox:latest
+    command: ["echo", "Serviço de Previsão de Demanda - Em desenvolvimento"]
+    networks:
+      - aiecommerce-network
+    restart: "no"
+
+networks:
+  aiecommerce-network:
+    external: true

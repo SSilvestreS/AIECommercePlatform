@@ -1,0 +1,179 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ml-recommendation-service
+  namespace: aiecommerce
+  labels:
+    app: ml-recommendation-service
+    tier: ml
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: ml-recommendation-service
+  template:
+    metadata:
+      labels:
+        app: ml-recommendation-service
+        tier: ml
+    spec:
+      containers:
+      - name: ml-recommendation-service
+        image: aiecommerce/ml-recommendation-service:latest
+        ports:
+        - containerPort: 5000
+          name: http
+        - containerPort: 9090
+          name: metrics
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ML_MODELS_PATH
+          value: "/app/ml/models"
+        - name: POSTGRES_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: connection-string
+        - name: REDIS_CONNECTION_STRING
+          value: "redis://redis:6379"
+        - name: RABBITMQ_CONNECTION_STRING
+          value: "amqp://guest:guest@rabbitmq:5672/"
+        - name: MLFLOW_TRACKING_URI
+          value: "http://mlflow:5000"
+        - name: MINIO_ENDPOINT
+          value: "http://minio:9000"
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-secret
+              key: access-key
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: minio-secret
+              key: secret-key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 5000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: ml-models
+          mountPath: /app/ml/models
+        - name: ml-experiments
+          mountPath: /app/ml/experiments
+      volumes:
+      - name: ml-models
+        persistentVolumeClaim:
+          claimName: ml-models-pvc
+      - name: ml-experiments
+        persistentVolumeClaim:
+          claimName: ml-experiments-pvc
+      imagePullSecrets:
+      - name: docker-registry-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ml-recommendation-service
+  namespace: aiecommerce
+  labels:
+    app: ml-recommendation-service
+    tier: ml
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+    targetPort: 5000
+    protocol: TCP
+    name: http
+  - port: 9090
+    targetPort: 9090
+    protocol: TCP
+    name: metrics
+  selector:
+    app: ml-recommendation-service
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-models-pvc
+  namespace: aiecommerce
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ml-experiments-pvc
+  namespace: aiecommerce
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: fast-ssd
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ml-recommendation-service-hpa
+  namespace: aiecommerce
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ml-recommendation-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15

@@ -1,0 +1,97 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API Gateway
+  - job_name: 'aiecommerce-gateway'
+    static_configs:
+      - targets: ['gateway:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # ML Services
+  - job_name: 'aiecommerce-ml-recommendation'
+    static_configs:
+      - targets: ['ml-recommendation:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'aiecommerce-ml-sentiment'
+    static_configs:
+      - targets: ['ml-sentiment:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'aiecommerce-ml-fraud'
+    static_configs:
+      - targets: ['ml-fraud:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'aiecommerce-ml-demand'
+    static_configs:
+      - targets: ['ml-demand:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Business Services
+  - job_name: 'aiecommerce-catalog'
+    static_configs:
+      - targets: ['catalog:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'aiecommerce-order'
+    static_configs:
+      - targets: ['order:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  - job_name: 'aiecommerce-identity'
+    static_configs:
+      - targets: ['identity:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # Infrastructure Services
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  - job_name: 'rabbitmq'
+    static_configs:
+      - targets: ['rabbitmq:15672']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # MLflow
+  - job_name: 'mlflow'
+    static_configs:
+      - targets: ['mlflow:5000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # MinIO
+  - job_name: 'minio'
+    static_configs:
+      - targets: ['minio:9000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s

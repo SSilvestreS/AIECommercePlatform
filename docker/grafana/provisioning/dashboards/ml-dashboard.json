@@ -1,0 +1,110 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "AI E-Commerce ML Dashboard",
+    "tags": ["ml", "ai", "ecommerce"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "ML Service Health",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=~\"aiecommerce-ml-.*\"}",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "green", "value": 1}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Recommendation Service Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"aiecommerce-ml-recommendation\"}[5m])",
+            "legendFormat": "Requests/sec"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Sentiment Analysis Accuracy",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "sentiment_analysis_accuracy",
+            "legendFormat": "Accuracy %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "min": 0,
+            "max": 100,
+            "unit": "percent"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Fraud Detection Metrics",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "fraud_detection_precision",
+            "legendFormat": "Precision"
+          },
+          {
+            "expr": "fraud_detection_recall",
+            "legendFormat": "Recall"
+          },
+          {
+            "expr": "fraud_detection_f1_score",
+            "legendFormat": "F1 Score"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Demand Forecasting RMSE",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "demand_forecasting_rmse",
+            "legendFormat": "RMSE"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Model Training Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "model_training_status",
+            "legendFormat": "{{model_name}}"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}
