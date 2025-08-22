@@ -109,27 +109,6 @@ Importe o arquivo `AIECommerce-Platform.postman_collection.json` no Postman para
 - `POST /api/recommendations/model/retrain` - Retreinar modelo
 - `GET /api/recommendations/stats` - Estatísticas do modelo
 
-## 📊 APIs e Testes
-
-### Coleção Postman
-Importe o arquivo `AIECommerce-Platform.postman_collection.json` no Postman para testar todas as APIs:
-
-#### Gateway API Endpoints
-- `GET /health` - Health check
-- `GET /api/gateway/recommendations` - Recomendações de produtos
-- `POST /api/gateway/sentiment` - Análise de sentimento
-- `POST /api/gateway/fraud-detection` - Detecção de fraude
-- `POST /api/gateway/demand-forecast` - Previsão de demanda
-- `GET /api/gateway/dashboard` - Dashboard resumido
-
-#### ML Recommendation Service Endpoints
-- `GET /health` - Health check
-- `GET /api/recommendations/user/{userId}` - Recomendações por usuário
-- `GET /api/recommendations/product/{productId}/similar` - Produtos similares
-- `GET /api/recommendations/anonymous` - Recomendações anônimas
-- `POST /api/recommendations/model/retrain` - Retreinar modelo
-- `GET /api/recommendations/stats` - Estatísticas do modelo
-
 ## 📊 Observabilidade e Monitoramento
 
 A plataforma implementa um sistema completo de observabilidade seguindo as **Three Pillars of Observability**:
