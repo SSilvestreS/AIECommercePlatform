@@ -1,0 +1,82 @@
+# Multi-stage build for production optimization
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+# Install necessary packages for performance
+RUN apk add --no-cache \
+    libc6-compat \
+    icu-libs \
+    && rm -rf /var/cache/apk/*
+
+# Set environment variables for performance
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+ENV DOTNET_GCHeapHardLimit=0x40000000
+ENV DOTNET_GCAllowVeryLargeObjects=1
+ENV DOTNET_GCHeapHardLimitPercent=80
+ENV DOTNET_GCHeapHardLimitSOH=0x20000000
+ENV DOTNET_GCHeapHardLimitLOH=0x20000000
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+WORKDIR /src
+
+# Copy project files
+COPY ["AIECommerce.Gateway.csproj", "./"]
+COPY ["../Shared/AIECommerce.Shared/AIECommerce.Shared.csproj", "../Shared/AIECommerce.Shared/"]
+COPY ["../Infrastructure/AIECommerce.Infrastructure/AIECommerce.Infrastructure.csproj", "../Infrastructure/AIECommerce.Infrastructure/"]
+
+# Restore dependencies
+RUN dotnet restore "AIECommerce.Gateway.csproj" --verbosity quiet
+
+# Copy source code
+COPY . .
+COPY ["../Shared/AIECommerce.Shared/", "../Shared/AIECommerce.Shared/"]
+COPY ["../Infrastructure/AIECommerce.Infrastructure/", "../Infrastructure/AIECommerce.Infrastructure/"]
+
+# Build with optimizations
+RUN dotnet build "AIECommerce.Gateway.csproj" \
+    -c Release \
+    -o /app/build \
+    --no-restore \
+    --verbosity quiet \
+    -p:OptimizeImplicitlyTriggeredBuild=false \
+    -p:UseRazorBuildServer=false
+
+FROM build AS publish
+RUN dotnet publish "AIECommerce.Gateway.csproj" \
+    -c Release \
+    -o /app/publish \
+    --no-build \
+    --verbosity quiet \
+    -p:PublishTrimmed=true \
+    -p:PublishSingleFile=true \
+    -p:TrimUnusedDependencies=true \
+    -p:EnableCompressionInSingleFile=true \
+    -p:DebugType=None \
+    -p:DebugSymbols=false
+
+# Runtime optimization stage
+FROM base AS final
+WORKDIR /app
+
+# Copy published app
+COPY --from=publish /app/publish .
+
+# Set performance-related environment variables
+ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV DOTNET_EnableDiagnostics=0
+ENV DOTNET_GCHeapHardLimit=0x40000000
+ENV DOTNET_GCAllowVeryLargeObjects=1
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/health || exit 1
+
+# Run as non-root user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+USER appuser
+
+ENTRYPOINT ["./AIECommerce.Gateway"]

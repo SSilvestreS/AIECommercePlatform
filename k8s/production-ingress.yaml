@@ -1,0 +1,140 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aiecommerce-production-ingress
+  namespace: aiecommerce
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "4k"
+    nginx.ingress.kubernetes.io/proxy-buffers-number: "8"
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+    nginx.ingress.kubernetes.io/rate-limit-window: "1m"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://app.aiecommerce.com, https://admin.aiecommerce.com"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/whitelist-source-range: "0.0.0.0/0"
+    nginx.ingress.kubernetes.io/modsecurity-snippet: |
+      SecRuleEngine On
+      SecRequestBodyAccess On
+      SecRequestBodyLimit 13107200
+      SecRequestBodyNoFilesLimit 131072
+      SecRequestBodyInMemoryLimit 131072
+      SecRequestBodyLimitAction Reject
+      SecRule REQUEST_HEADERS:Content-Type "text/xml" \
+        "id:'200000',phase:1,deny,msg:'XML requests are not allowed'"
+      SecRule ARGS "@detectSQLi" \
+        "id:'200001',phase:2,deny,msg:'SQL Injection detected'"
+      SecRule ARGS "@detectXSS" \
+        "id:'200002',phase:2,deny,msg:'XSS detected'"
+spec:
+  tls:
+  - hosts:
+    - api.aiecommerce.com
+    - admin.aiecommerce.com
+    - app.aiecommerce.com
+    secretName: aiecommerce-tls
+  rules:
+  - host: api.aiecommerce.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: gateway-service
+            port:
+              number: 80
+      - path: /health
+        pathType: Exact
+        backend:
+          service:
+            name: gateway-service
+            port:
+              number: 80
+      - path: /metrics
+        pathType: Exact
+        backend:
+          service:
+            name: gateway-service
+            port:
+              number: 80
+  - host: admin.aiecommerce.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: admin-service
+            port:
+              number: 80
+  - host: app.aiecommerce.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aiecommerce-tls
+  namespace: aiecommerce
+  annotations:
+    cert-manager.io/certificate-name: aiecommerce-cert
+type: kubernetes.io/tls
+data:
+  tls.crt: ""  # Will be populated by cert-manager
+  tls.key: ""  # Will be populated by cert-manager
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: aiecommerce-cert
+  namespace: aiecommerce
+spec:
+  secretName: aiecommerce-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+  - api.aiecommerce.com
+  - admin.aiecommerce.com
+  - app.aiecommerce.com
+  duration: 2160h # 90 days
+  renewBefore: 360h # 15 days
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@aiecommerce.com
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+    - dns01:
+        cloudflare:
+          email: admin@aiecommerce.com
+          apiTokenSecretRef:
+            name: cloudflare-api-token-secret
+            key: api-token

@@ -1,0 +1,327 @@
+name: AIECommerce Platform CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  release:
+    types: [ published ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job de Análise de Código e Qualidade
+  code-quality:
+    name: Code Quality & Security Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install SonarCloud scanner
+        run: |
+          dotnet tool install --global dotnet-sonarscanner
+          dotnet tool install --global dotnet-coverage
+
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.dotnet/tools
+          key: ${{ runner.os }}-sonarcloud-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-sonarcloud-
+
+      - name: SonarCloud Begin Analysis
+        # Note: These secrets need to be configured in GitHub repository settings
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+          SONAR_ORGANIZATION: ${{ secrets.SONAR_ORGANIZATION }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"$SONAR_PROJECT_KEY" \
+            /o:"$SONAR_ORGANIZATION" \
+            /d:sonar.host.url="$SONAR_HOST_URL" \
+            /d:sonar.login="$SONAR_TOKEN" \
+            /d:sonar.cs.opencover.reportsPaths="**/coverage.opencover.xml" \
+            /d:sonar.coverage.exclusions="**/*Test*,**/*Tests*,**/*.cshtml,**/*.razor"
+
+      - name: Build and Test
+        run: |
+          dotnet build --configuration Release --no-restore
+          dotnet test --configuration Release --no-build --collect:"XPlat Code Coverage" --format opencover
+
+      - name: SonarCloud End Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.login="$SONAR_TOKEN"
+
+      - name: Run Security Scan
+        uses: snyk/actions/dotnet@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+  # Job de Build e Testes
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    needs: code-quality
+    strategy:
+      matrix:
+        include:
+          - project: 'AIECommerce.Gateway'
+            path: 'src/Gateway/AIECommerce.Gateway'
+          - project: 'AIECommerce.ML.RecommendationService'
+            path: 'src/ML.Services/AIECommerce.ML.RecommendationService'
+          - project: 'AIECommerce.Infrastructure'
+            path: 'src/Infrastructure/AIECommerce.Infrastructure'
+          - project: 'AIECommerce.Shared'
+            path: 'src/Shared/AIECommerce.Shared'
+          - project: 'AIECommerce.ML.Shared'
+            path: 'src/Shared/AIECommerce.ML.Shared'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache .NET packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ matrix.path }}
+
+      - name: Build
+        run: dotnet build ${{ matrix.path }} --configuration Release --no-restore
+
+      - name: Run unit tests
+        run: dotnet test ${{ matrix.path }} --configuration Release --no-build --verbosity normal
+
+      - name: Run integration tests
+        if: matrix.project == 'AIECommerce.Gateway' || matrix.project == 'AIECommerce.ML.RecommendationService'
+        run: |
+          dotnet test tests/AIECommerce.Tests.Integration --configuration Release --no-build --verbosity normal
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-results-${{ matrix.project }}
+          path: |
+            **/TestResults/
+            **/coverage.*.xml
+
+  # Job de Build de Imagens Docker
+  build-docker-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    strategy:
+      matrix:
+        include:
+          - service: 'gateway'
+            path: 'src/Gateway/AIECommerce.Gateway'
+            dockerfile: 'Dockerfile'
+          - service: 'ml-recommendation'
+            path: 'src/ML.Services/AIECommerce.ML.RecommendationService'
+            dockerfile: 'Dockerfile'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.path }}
+          file: ${{ matrix.path }}/${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Job de Deploy para Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build-docker-images
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        env:
+          KUBE_CONFIG_STAGING: ${{ secrets.KUBE_CONFIG_STAGING }}
+        run: |
+          echo "$KUBE_CONFIG_STAGING" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/ -n aiecommerce
+          kubectl rollout status deployment/gateway -n aiecommerce
+          kubectl rollout status deployment/ml-recommendation -n aiecommerce
+
+      - name: Run smoke tests
+        run: |
+          # Aguardar serviços ficarem disponíveis
+          sleep 30
+          # Testes básicos de health check
+          curl -f http://staging-gateway.aiecommerce.com/health || exit 1
+
+  # Job de Deploy para Produção
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-docker-images
+    if: github.event_name == 'release'
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        env:
+          KUBE_CONFIG_PRODUCTION: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
+        run: |
+          echo "$KUBE_CONFIG_PRODUCTION" | base64 -d > kubeconfig.yaml
+          export KUBECONFIG=kubeconfig.yaml
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f k8s/namespace.yaml
+          kubectl apply -f k8s/ -n aiecommerce
+          kubectl rollout status deployment/gateway -n aiecommerce
+          kubectl rollout status deployment/ml-recommendation -n aiecommerce
+
+      - name: Run production tests
+        run: |
+          # Aguardar serviços ficarem disponíveis
+          sleep 60
+          # Testes de produção
+          curl -f https://api.aiecommerce.com/health || exit 1
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "🚀 Production deployment successful!"
+          # Aqui você pode adicionar notificações para Slack, Teams, etc.
+
+  # Job de Performance Testing
+  performance-testing:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/develop'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Install NBomber
+        run: dotnet tool install --global NBomber.CLI
+
+      - name: Run performance tests
+        run: |
+          cd tests/AIECommerce.Tests.Performance
+          dotnet run --configuration Release
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: tests/AIECommerce.Tests.Performance/results/
+
+  # Job de Notificação
+  notify:
+    name: Notify Team
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production, performance-testing]
+    if: always()
+    
+    steps:
+      - name: Notify deployment status
+        run: |
+          if [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+            echo "✅ Staging deployment successful"
+          else
+            echo "❌ Staging deployment failed"
+          fi
+          
+          if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            echo "✅ Production deployment successful"
+          elif [ "${{ needs.deploy-production.result }}" == "skipped" ]; then
+            echo "⏭️ Production deployment skipped (not a release)"
+          else
+            echo "❌ Production deployment failed"
+          fi

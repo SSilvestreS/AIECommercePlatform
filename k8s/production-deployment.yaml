@@ -1,0 +1,273 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-production
+  namespace: aiecommerce
+  labels:
+    app: gateway
+    environment: production
+    version: v1.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: gateway
+      environment: production
+  template:
+    metadata:
+      labels:
+        app: gateway
+        environment: production
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"
+        sidecar.istio.io/inject: "true"
+    spec:
+      serviceAccountName: gateway-service-account
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      containers:
+      - name: gateway
+        image: ghcr.io/aiecommerce/platform/gateway:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 443
+          name: https
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:80;https://+:443"
+        - name: POSTGRES_HOST
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: host
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: database
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: username
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        - name: REDIS_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: connection-string
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: secret-key
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 80
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health/startup
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 30
+        volumeMounts:
+        - name: logs
+          mountPath: /app/logs
+        - name: config
+          mountPath: /app/config
+      volumes:
+      - name: logs
+        persistentVolumeClaim:
+          claimName: gateway-logs-pvc
+      - name: config
+        configMap:
+          name: gateway-config
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - gateway
+              topologyKey: kubernetes.io/hostname
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/worker
+                operator: Exists
+      tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "production"
+        effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway-service
+  namespace: aiecommerce
+  labels:
+    app: gateway
+    environment: production
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: https
+  selector:
+    app: gateway
+    environment: production
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: gateway-hpa
+  namespace: aiecommerce
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: gateway-production
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+---
+apiVersion: autoscaling/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: gateway-vpa
+  namespace: aiecommerce
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: gateway-production
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+    - containerName: '*'
+      minAllowed:
+        cpu: 100m
+        memory: 50Mi
+      maxAllowed:
+        cpu: 4
+        memory: 8Gi
+      controlledValues: RequestsAndLimits
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-config
+  namespace: aiecommerce
+data:
+  appsettings.Production.json: |
+    {
+      "Performance": {
+        "Caching": {
+          "DefaultExpirationMinutes": 30,
+          "MaxMemorySize": "1GB"
+        },
+        "RateLimiting": {
+          "PermitLimit": 2000,
+          "Window": "00:01:00"
+        }
+      }
+    }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gateway-logs-pvc
+  namespace: aiecommerce
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: fast-ssd
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gateway-service-account
+  namespace: aiecommerce
+secrets:
+- name: gateway-token
