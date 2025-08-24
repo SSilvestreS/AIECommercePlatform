@@ -1,8 +1,10 @@
-# 🚀 AI-Powered E-Commerce Analytics Platform
+### AI-Powered E-Commerce Analytics Platform
+
+ [![Status](https://img.shields.io/badge/Status-Completo-green)](https://github.com/SSilvestreS/NexusPM)
 
 Uma plataforma empresarial de microserviços construída com arquitetura distribuída moderna, integrando **Machine Learning** e **Inteligência Artificial** para otimização de operações de e-commerce. Desenvolvida em **C# .NET 8.0**, a solução oferece capacidades avançadas de análise preditiva, automação de processos críticos e insights acionáveis para tomada de decisão estratégica.
 
-## 🎯 Visão Geral
+##  Visão Geral
 
 A plataforma AIECommerce representa uma solução enterprise-grade que combina a robustez de microserviços com o poder analítico de algoritmos de Machine Learning. O sistema é projetado para escalar horizontalmente, garantindo alta disponibilidade e performance em ambientes de produção críticos.
 
@@ -12,7 +14,7 @@ A plataforma AIECommerce representa uma solução enterprise-grade que combina a
 - **Segurança Avançada**: Detecção de fraude em tempo real com taxa de falso positivo <2%
 - **ROI Mensurável**: Aumento médio de 25-35% na conversão através de recomendações personalizadas
 
-## 🏗️ Arquitetura da Solução
+##  Arquitetura da Solução
 
 ### Arquitetura de Microserviços
 A plataforma implementa uma arquitetura de microserviços baseada em **Domain-Driven Design (DDD)** e **Event-Driven Architecture (EDA)**, garantindo desacoplamento, escalabilidade e manutenibilidade. Cada serviço é independente, com suas próprias bases de dados e APIs, comunicando-se através de eventos assíncronos.
@@ -32,7 +34,7 @@ A plataforma implementa uma arquitetura de microserviços baseada em **Domain-Dr
 - **Containerização**: Docker com multi-stage builds e Docker Compose para desenvolvimento
 - **ML Infrastructure**: MLflow para experiment tracking, Kubeflow para orquestração de pipelines
 
-## 🧠 Capacidades de Machine Learning
+##  Capacidades de Machine Learning
 
 ### Sistema de Recomendações Inteligentes
 Implementa algoritmos híbridos combinando **Collaborative Filtering** baseado em usuários e itens com **Content-based Filtering** utilizando embeddings vetoriais. O sistema inclui:
@@ -62,7 +64,7 @@ Sistema de forecasting baseado em deep learning e séries temporais:
 - **Feature Store** centralizado para gerenciamento de features de ML
 - **Continuous Learning** com feedback loops e atualização incremental de modelos
 
-## 🚀 Como Executar
+##  Como Executar
 
 ### Pré-requisitos
 - Docker Desktop
@@ -88,7 +90,7 @@ docker-compose up -d
 - **Grafana**: http://localhost:3000
 - **Prometheus**: http://localhost:9090
 
-## 📊 APIs e Testes
+##  APIs e Testes
 
 ### Coleção Postman
 Importe o arquivo `AIECommerce-Platform.postman_collection.json` no Postman para testar todas as APIs:
@@ -109,7 +111,7 @@ Importe o arquivo `AIECommerce-Platform.postman_collection.json` no Postman para
 - `POST /api/recommendations/model/retrain` - Retreinar modelo
 - `GET /api/recommendations/stats` - Estatísticas do modelo
 
-## 📊 Observabilidade e Monitoramento
+##  Observabilidade e Monitoramento
 
 A plataforma implementa um sistema completo de observabilidade seguindo as **Three Pillars of Observability**:
 
@@ -133,7 +135,7 @@ A plataforma implementa um sistema completo de observabilidade seguindo as **Thr
 - **Circuit Breaker Pattern** implementado para falhas em cascata
 - **Retry Policies** configuráveis com backoff exponencial
 
-## 🧪 Testes
+##  Testes
 
 ```bash
 # Testes unitários
@@ -146,7 +148,7 @@ dotnet test tests/AIECommerce.Tests.Integration
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-## 📁 Estrutura do Projeto
+##  Estrutura do Projeto
 
 ```
 AIECommercePlatform/
@@ -165,7 +167,7 @@ AIECommercePlatform/
 └── AIECommerce-Platform.postman_collection.json  # Coleção Postman
 ```
 
-## 🔧 Configuração
+##  Configuração
 
 ### Variáveis de Ambiente
 ```bash
@@ -185,19 +187,19 @@ ML_EXPERIMENTS_PATH=./ml/experiments/
 
 ## 📈 Roadmap
 
-- [x] **Fase 1**: Core ML Services ✅
-- [x] **Fase 2**: Business Services ✅
-- [x] **Fase 3**: API Gateway ✅
-- [x] **Fase 4**: Docker & Kubernetes ✅
-- [x] **Fase 5**: Monitoring & Observability ✅
-- [x] **Fase 6**: APIs Funcionais e Postman ✅
-- [x] **Fase 7**: CI/CD Pipeline ✅
-- [x] **Fase 8**: Performance Optimization ✅
-- [x] **Fase 9**: Production Deployment ✅
+- [x] **Fase 1**: Core ML Services 
+- [x] **Fase 2**: Business Services 
+- [x] **Fase 3**: API Gateway 
+- [x] **Fase 4**: Docker & Kubernetes 
+- [x] **Fase 5**: Monitoring & Observability 
+- [x] **Fase 6**: APIs Funcionais e Postman 
+- [x] **Fase 7**: CI/CD Pipeline 
+- [x] **Fase 8**: Performance Optimization 
+- [x] **Fase 9**: Production Deployment 
 
-## 🆕 Novidades da Versão
+##  Novidades da Versão
 
-### ✅ Funcionalidades Implementadas
+###  Funcionalidades Implementadas
 - **APIs Completamente Funcionais**: Gateway e ML Services rodando com Docker
 - **Coleção Postman**: Testes automatizados para todas as APIs
 - **Script de Inicialização**: `start-platform.ps1` para deploy rápido
@@ -209,7 +211,7 @@ ML_EXPERIMENTS_PATH=./ml/experiments/
 - **Otimizações de Performance**: Dockerfiles multi-stage, configurações otimizadas para produção
 - **Deploy em Produção**: Scripts automatizados, configurações Kubernetes otimizadas, monitoramento avançado
 
-### 🔧 Melhorias Técnicas
+###  Melhorias Técnicas
 - **Resolução de Dependências**: Serviços .NET compilando e rodando corretamente
 - **Configuração HTTP**: Otimização para desenvolvimento local
 - **Modelos Locais**: DTOs independentes para evitar conflitos de build
@@ -219,7 +221,7 @@ ML_EXPERIMENTS_PATH=./ml/experiments/
 - **Performance**: Otimizações de .NET, Docker multi-stage e configurações de produção
 - **Monitoramento**: Prometheus, Grafana, Jaeger e ELK Stack configurados
 
-### 🚀 CI/CD e Deploy
+###  CI/CD e Deploy
 - **GitHub Actions**: Pipeline completo com build, testes, análise de qualidade e deploy
 - **SonarCloud**: Análise estática de código e métricas de qualidade
 - **Snyk**: Scan de segurança para vulnerabilidades conhecidas
@@ -227,7 +229,7 @@ ML_EXPERIMENTS_PATH=./ml/experiments/
 - **Deploy Automatizado**: Scripts PowerShell para staging e produção
 - **Rollback Automático**: Recuperação automática em caso de falha no deploy
 
-### ⚡ Otimizações de Performance
+###  Otimizações de Performance
 - **Docker Multi-stage**: Builds otimizados e imagens menores
 - **Configurações .NET**: Tuning de GC, memory limits e performance
 - **Kubernetes HPA/VPA**: Auto-scaling horizontal e vertical
@@ -235,7 +237,7 @@ ML_EXPERIMENTS_PATH=./ml/experiments/
 - **Load Balancing**: Distribuição inteligente de carga
 - **Caching Strategy**: Redis, in-memory e CDN para máxima performance
 
-## 🤝 Contribuição
+##  Contribuição
 
 1. Fork o projeto
 2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
@@ -243,11 +245,11 @@ ML_EXPERIMENTS_PATH=./ml/experiments/
 4. Push para a branch (`git push origin feature/AmazingFeature`)
 5. Abra um Pull Request
 
-## 📄 Licença
+##  Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
-## 📬 Contato
+##  Contato
 
 - **E-mail**: sauloxl31@gmail.com
 - **LinkedIn**: Saulo Silvestre
